@@ -1,18 +1,18 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
-import ProtectedRoute from "./components/ProtectedRoute";
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
 import Layout from "./components/layout/Layout";
 
-import Login from "./pages/Login";
-import Register from "./pages/Register";
+import Login from "./pages/Login.jsx";
+import Register from "./pages/Register.jsx";
 import Dashboard from "./pages/Dashboard";
-import Lessons from "./pages/Lessons";
-import Flashcards from "./pages/Flashcards";
+import Lessons from "./pages/Lessons.jsx";
+import Flashcards from "./pages/Flashcards.jsx";
 import Leaderboard from "./pages/Leaderboard.jsx";
-import SpeakingPractice from "./pages/SpeakingPractice";
-import AITutor from "./pages/AITutor";
-import Achievements from "./pages/Achievements";
+import SpeakingPractice from "./pages/SpeakingPractice.jsx";
+import AITutor from "./pages/AITutor.jsx";
+import Achievements from "./pages/Achievements.jsx";
 
 function App() {
   return (

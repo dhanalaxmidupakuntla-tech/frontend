@@ -1,6 +1,8 @@
 import { useEffect, useState, useContext } from "react";
 import api from "../services/api";
 import { XpContext } from "../context/XpContext";
+import { supabase } from "../lib/supabase";
+import { AuthContext } from "../context/AuthContext";
 
 export default function Flashcards() {
   const [flashcards, setFlashcards] = useState(
@@ -22,6 +24,8 @@ export default function Flashcards() {
     ]
   );
 
+  const { user } = useContext(AuthContext);
+
   const [index, setIndex] = useState(0);
   const [flip, setFlip] = useState(false);
 
@@ -38,6 +42,18 @@ export default function Flashcards() {
       if (res.data && res.data.length > 0) setFlashcards(res.data);
     });
   }, []);
+
+  useEffect(() => {
+    const saveToCloud = async () => {
+      if (user) {
+        await supabase
+          .from("profiles")
+          .upsert({ id: user.id, flashcards });
+      }
+    };
+
+    saveToCloud();
+  }, [flashcards]);
 
   // Save flashcards to localStorage whenever they update
   useEffect(() => {

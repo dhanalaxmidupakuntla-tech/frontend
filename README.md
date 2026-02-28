@@ -9,6 +9,21 @@ Currently, two official plugins are available:
 
 ## React Compiler
 
+### AI Tutor (OpenAI)
+
+The app contacts a backend endpoint at `/api/ai/chat` to power the AI tutor. If that service fails with a 500 error, the frontend will automatically fall back to calling OpenAI directly using a key stored in an environment variable.
+
+To enable the client-side fallback you must create a `.env` file in the project root with:
+
+```
+VITE_OPENAI_API_KEY=<your_openai_api_key>
+```
+
+Make sure you never commit your API key to source control. The frontend uses `import.meta.env.VITE_OPENAI_API_KEY` to pick it up.
+
+
+## Expanding the ESLint configuration
+
 The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
 ## Expanding the ESLint configuration

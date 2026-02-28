@@ -3,6 +3,7 @@ import api from "../services/api";
 
 export default function Leaderboard() {
   const [users, setUsers] = useState([]);
+  console.log(users)
 
   useEffect(() => {
     api.get("/leaderboard").then(res => setUsers(res.data));

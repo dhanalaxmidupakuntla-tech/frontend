@@ -21,11 +21,14 @@ export default function Register() {
 
         <input
           className="w-full border p-2 mb-3"
+          type="email"
+          autoComplete="email"
           placeholder="Email"
           onChange={(e) => setForm({...form, email:e.target.value})}
         />
         <input
           type="password"
+          autoComplete="new-password"
           className="w-full border p-2 mb-3"
           placeholder="Password"
           onChange={(e) => setForm({...form, password:e.target.value})}

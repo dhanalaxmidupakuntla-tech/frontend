@@ -72,6 +72,18 @@ export default function Sidebar() {
           >
             <Trophy size={18} /> Leaderboard
           </NavLink>
+
+          <NavLink to="/achievements" className={({ isActive }) =>
+            `${linkClass} ${isActive ? activeClass : ""}`
+          }>
+            🏅 Achievements
+          </NavLink>
+
+          <NavLink to="/ai" className={({ isActive }) =>
+            `${linkClass} ${isActive ? activeClass : ""}`
+          }>
+            🤖 AI Tutor
+          </NavLink>
         </nav>
       </div>
     </>

@@ -11,6 +11,8 @@ import Lessons from "./pages/Lessons";
 import Flashcards from "./pages/Flashcards";
 import Leaderboard from "./pages/Leaderboard";
 import SpeakingPractice from "./pages/SpeakingPractice";
+import AITutor from "./pages/AITutor";
+import Achievements from "./pages/Achievements";
 
 function App() {
   return (
@@ -36,6 +38,8 @@ function App() {
             <Route path="flashcards" element={<Flashcards />} />
             <Route path="leaderboard" element={<Leaderboard />} />
             <Route path="speaking" element={<SpeakingPractice />} />
+            <Route path="ai" element={<AITutor />} />
+            <Route path="achievements" element={<Achievements />} />
           </Route>
 
           {/* 404 */}

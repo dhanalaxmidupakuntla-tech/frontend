@@ -1,9 +1,12 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import api from "../services/api";
+import useSound from "use-sound";
+import successSound from "../assets/success.mp3";
+import { XpContext } from "../context/XpContext";
 
 export default function Lessons() {
   const [lessons, setLessons] = useState([
-      {
+    {
       language: "Spanish 🇪🇸",
       title: "Basics 1",
       words: ["Hola", "Adiós", "Gracias", "Por favor"],
@@ -31,9 +34,20 @@ export default function Lessons() {
   ]);
 
   const [quizMode, setQuizMode] = useState(false);
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [score, setScore] = useState(0);
+  const [currentQuestion, setCurrentQuestion] = useState(
+    Number(localStorage.getItem("currentQuestion")) || 0
+  );
+
+  Number(localStorage.getItem("last_result"))
+
+  const [score, setScore] = useState(
+    Number(localStorage.getItem("score")) || 0
+  );
   const [hearts, setHearts] = useState(3);
+  const { addXp } = useContext(XpContext);
+  const [playSuccess] = useSound(successSound);
+  const [combo, setCombo] = useState(0);
+  const difficulty = score > 3 ? "Hard" : "Easy";
 
   const questions = [
     { question: "Hola means?", options: ["Hello", "Bye", "Thanks"], answer: "Hello" },
@@ -41,17 +55,30 @@ export default function Lessons() {
   ];
 
   const handleAnswer = (option) => {
+    if (currentQuestion === questions.length - 1) {
+      alert("Quiz Finished!");
+      localStorage.removeItem("quiz_score");
+      localStorage.removeItem("quiz_current");
+    }
     if (option === questions[currentQuestion].answer) {
       setScore(score + 1);
-    }else {
+      playSuccess();
+      setCombo(combo + 1);
+      addXp(10 + combo * 2);// 10 XP per correct answer
+    } else {
       setHearts(hearts - 1);
+      setCombo(0);
     }
     setCurrentQuestion(currentQuestion + 1);
   };
 
   useEffect(() => {
-    api.get("/lessons").then(res => setLessons(res.data));
-  }, []);
+    localStorage.setItem("quiz_score", score);
+  }, [score]);
+
+  useEffect(() => {
+    localStorage.setItem("quiz_current", currentQuestion);
+  }, [currentQuestion]);
 
   const complete = async (id) => {
     await api.post("/lessons/complete", { lessonId: id });
@@ -81,13 +108,13 @@ export default function Lessons() {
       </button>
 
       <div className="mb-4">
-      ❤️ Hearts: {hearts}
-    </div>
+        ❤️ Hearts: {hearts}
+      </div>
 
       {quizMode && currentQuestion < questions.length && (
         <div className="bg-white p-6 rounded-xl shadow">
           <h3 className="text-xl font-bold mb-4">
-            {questions[currentQuestion].question}
+            ({difficulty}) {questions[currentQuestion].question}
           </h3>
 
           {questions[currentQuestion].options.map((opt, i) => (
@@ -104,7 +131,7 @@ export default function Lessons() {
 
       <button
         onClick={() => setMatchGame(!matchGame)}
-        className="bg-purple-500 text-white px-4 py-2 rounded mt-4"
+        className="bg-purple-500 text-white px-4 py-2 rounded mb-4"
       >
         Matching Game 🧩
       </button>

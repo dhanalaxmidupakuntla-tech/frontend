@@ -9,7 +9,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Lessons from "./pages/Lessons";
 import Flashcards from "./pages/Flashcards";
-import Leaderboard from "./pages/Leaderboard";
+import Leaderboard from "./pages/Leaderboard.jsx";
 import SpeakingPractice from "./pages/SpeakingPractice";
 import AITutor from "./pages/AITutor";
 import Achievements from "./pages/Achievements";

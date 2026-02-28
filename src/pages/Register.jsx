@@ -11,7 +11,7 @@ export default function Register() {
     e.preventDefault();
     await register(form);
     navigate("/login");
-    alert("Registered! Now Login 🎉");
+    alert("Registered! Now login 🎉");
   };
 
   return (
@@ -37,6 +37,16 @@ export default function Register() {
         <button className="w-full bg-blue-600 text-white py-2 rounded">
           Register
         </button>
+
+        <p className="text-center text-sm mt-4">
+          Already have an account?{' '}
+          <a
+            href="/login"
+            className="text-blue-600 font-semibold hover:underline"
+          >
+            Login here
+          </a>
+        </p>
       </form>
     </div>
   );

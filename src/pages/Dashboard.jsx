@@ -9,11 +9,11 @@ import successSound from "../assets/success.mp3";
 import Confetti from "react-confetti";
 
 import PageWrapper from "../components/layout/PageWrapper";
-import LevelCard from "../components/Dashboard/LevelCard";
-import XPCard from "../components/Dashboard/XPCard";
-import StreakCard from "../components/Dashboard/StreakCard";
-import BadgeCard from "../components/Dashboard/BadgeCard";
-import FlashcardStats from "../components/Dashboard/FlashcardStats";
+import LevelCard from "../components/dashboard/LevelCard";
+import XPCard from "../components/dashboard/XPCard";
+import StreakCard from "../components/dashboard/StreakCard";
+import BadgeCard from "../components/dashboard/BadgeCard";
+import FlashcardStats from "../components/dashboard/FlashcardStats";
 
 import api from "../services/api";
 

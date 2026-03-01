@@ -9,10 +9,22 @@ const __dirname = path.dirname(__filename);
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
+  server: {
+    port: 5173, // Your frontend port
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000/', // Your backend URL
+        changeOrigin: true,
+        secure: false, // Set to true if your backend uses HTTPS
+      },
+    },
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
+      },
     },
   },
-});
+
+  });
+
 

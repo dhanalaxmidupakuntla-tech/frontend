@@ -1,101 +1,86 @@
 import { useState, useEffect, useRef } from "react";
-import api from "../services/api"; // your axios instance
+import api from "../services/api";
 import { useXp } from "../context/XpContext";
-
-// fallback to OpenAI directly from the client when the backend is unreachable
-// If an API key is configured it calls the OpenAI API; otherwise it returns a
-// polite canned response so the chat UI still feels responsive.
-async function openAiFallback(prompt) {
-  const key = import.meta.env.VITE_OPENAI_API_KEY;
-  if (!key) {
-    return "Sorry, I'm having trouble connecting to the AI right now.";
-  }
-
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${key}`,
-    },
-    body: JSON.stringify({
-      model: "gpt-3.5-turbo",
-      messages: [
-        { role: "system", content: "You are Lingoo AI, a friendly language tutor." },
-        { role: "user", content: prompt },
-      ],
-      max_tokens: 150,
-    }),
-  });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`OpenAI error: ${res.status} ${errText}`);
-  }
-
-  const data = await res.json();
-  return data?.choices?.[0]?.message?.content || "";
-}
+import PageWrapper from "../components/layout/PageWrapper";
 
 export default function AITutor() {
+  const topics = [
+    "General",
+    "Greetings",
+    "Food",
+    "Travel",
+    "Animals",
+    "Family",
+    "Colors",
+    "Numbers",
+    "Sports",
+  ];
+
+  const quickQuestions = {
+    General: ["What is this?", "How do you say hello?", "Teach me a new word"],
+    Greetings: ["How to say goodbye?", "How to greet someone?", "Polite phrases"],
+    Food: ["Fruits in Spanish", "Vegetables list", "Cooking words"],
+    Travel: ["Hotel phrases", "Direction words", "Transportation"],
+    Animals: ["Common animals", "Pet names", "Animal sounds"],
+    Family: ["Family members", "Relationships", "Family phrases"],
+    Colors: ["All colors", "Color adjectives", "Describe colors"],
+    Numbers: ["Count 1-10", "Learn 11-20", "Phone numbers"],
+    Sports: ["Sports vocabulary", "Games", "Athletic activities"],
+  };
+
+  const [topic, setTopic] = useState(topics[0]);
+  const [difficulty, setDifficulty] = useState("beginner");
   const [messages, setMessages] = useState([
-    { role: "bot", text: "Hi! I am Lingoo AI 🤖 Ask me a word!" },
+    { role: "bot", text: "Hi! I'm Lingoo AI 🤖 Choose a topic and let's learn together!" },
   ]);
   const { addXp } = useXp();
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [notice, setNotice] = useState("");
   const chatEndRef = useRef(null);
 
-  const sendMessage = async () => {
-    if (!input.trim()) return;
+  // ----- Send message to backend API -----
+  const sendMessage = async (quickQuestion = null) => {
+    const messageText = quickQuestion || input.trim();
+    if (!messageText) return;
 
-    const userMsg = { role: "user", text: input };
+    const userMsg = { role: "user", text: messageText };
     setMessages((prev) => [...prev, userMsg]);
-    setInput("");
+    if (!quickQuestion) setInput("");
     setLoading(true);
+    setNotice("");
 
     let replyText = "";
+    let xpReward = 5; // base XP
+    if (difficulty === "intermediate") xpReward = 10;
+    if (difficulty === "advanced") xpReward = 15;
 
     try {
-      // send both properties in case the server expects `prompt` instead of `message`
-      const res = await api.post("/ai/chat", { message: input, prompt: input });
-      replyText = res.data.reply;
+      const res = await api.post("/ai/chat", {
+        message: messageText,
+        topic,
+        difficulty,
+      });
+
+      const data = res.data;
+      replyText = data.reply;  // ✅ Axios response
+      setNotice("✅ Response from AI provider");
     } catch (err) {
-      console.error("AI request failed:", err);
+      console.error("Frontend API call failed:", err);
 
-      // if the server sent back a message, log it for debugging but don't
-      // necessarily expose raw text to the user (could contain sensitive data).
-      if (err.response?.data) {
-        const serverMsg =
-          err.response.data.error || err.response.data.message || JSON.stringify(err.response.data);
-        console.warn("Server response:", serverMsg);
-        if (!replyText) replyText = "Service unavailable – please try again later.";
-      }
+      replyText =
+        err.response?.data?.error ||
+        "Unable to get response from AI. Please try again.";
 
-      // if backend returned a 500 we attempt a client-side call directly to OpenAI
-      if (err.response?.status === 500) {
-        try {
-          // openAiFallback always returns something sensible, so we can assign
-          // the result directly.
-          replyText = await openAiFallback(input);
-        } catch (fallbackErr) {
-          console.error("OpenAI fallback failed:", fallbackErr);
-          // fall through to the generic message below
-        }
-      }
-
-      if (!replyText) {
-        replyText = "Oops! AI is not responding 😢";
-      }
-    } finally {
-      setLoading(false);
+      setNotice("❌ AI error");
     }
 
+    // ----- Add AI message and XP -----
     const botMsg = { role: "bot", text: replyText };
     setMessages((prev) => [...prev, botMsg]);
 
-    if (replyText && replyText !== "Oops! AI is not responding 😢") {
-      // Award XP only if we got a real answer
-      addXp(5);
+    if (replyText && !replyText.includes("Unable")) {
+      addXp(xpReward);
     }
   };
 
@@ -103,7 +88,6 @@ export default function AITutor() {
     if (e.key === "Enter") sendMessage();
   };
 
-  // scroll to bottom whenever a new message is added
   useEffect(() => {
     if (chatEndRef.current) {
       chatEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -111,37 +95,112 @@ export default function AITutor() {
   }, [messages]);
 
   return (
-    <div className="p-6 max-w-xl mx-auto">
-      <h2 className="text-xl font-bold mb-4">AI Tutor 🤖</h2>
+    <PageWrapper title="AI Tutor">
+      <div className="max-w-4xl mx-auto">
+        <h3 className="text-4xl font-bold mb-8 text-center bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">🤖 AI Tutor</h3>
 
-      <div className="bg-white p-4 rounded-xl h-64 overflow-y-auto mb-4 flex flex-col gap-2">
-        {messages.map((msg, i) => (
-          <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-            <span className={`px-3 py-1 rounded ${msg.role === "user" ? "bg-purple-200" : "bg-green-200"}`}>
-              {msg.text}
-            </span>
+        {/* Topic & Difficulty Selection */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div>
+            <label className="block text-sm font-semibold mb-2">Topic</label>
+            <select
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              className="w-full border-2 border-purple-300 p-2 rounded-lg bg-white dark:bg-gray-700 dark:text-white font-semibold"
+            >
+              {topics.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
           </div>
-        ))}
-        {/* dummy div used for scrolling */}
-        <div ref={chatEndRef} />
-      </div>
 
-      <div className="flex">
-        <input
-          className="flex-1 border p-2 rounded-l"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyPress}
-          placeholder="Type a word..."
-        />
-        <button
-          onClick={sendMessage}
-          className="bg-purple-600 text-white px-4 rounded-r"
-          disabled={loading}
-        >
-          {loading ? "Thinking..." : "Send"}
-        </button>
+          <div>
+            <label className="block text-sm font-semibold mb-2">Difficulty</label>
+            <div className="flex gap-2">
+              {["beginner", "intermediate", "advanced"].map((lvl) => (
+                <button
+                  key={lvl}
+                  onClick={() => setDifficulty(lvl)}
+                  className={`flex-1 px-3 py-2 rounded-lg font-semibold ${difficulty === lvl
+                    ? "bg-purple-600 text-white"
+                    : "bg-gray-200 text-gray-700"
+                    }`}
+                >
+                  {lvl === "beginner" ? "🌱" : lvl === "intermediate" ? "🌿" : "🌳"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <button
+            onClick={() =>
+              setMessages([{ role: "bot", text: "Hi! I'm Lingoo AI 🤖 Ready to learn? Choose a topic!" }])
+            }
+            className="bg-red-500 text-white font-bold py-2 px-4 rounded-lg"
+          >
+            Clear Chat
+          </button>
+        </div>
+
+        {/* Quick Questions */}
+        {quickQuestions[topic] && (
+          <div className="mb-6 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+            <p className="text-xs font-semibold mb-2">💡 Quick Questions:</p>
+            <div className="flex flex-wrap gap-2">
+              {quickQuestions[topic].map((q, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => sendMessage(q)}
+                  disabled={loading}
+                  className="text-xs bg-blue-500 text-white py-2 px-3 rounded-full"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Status Notice */}
+        {notice && (
+          <div className="mb-4 text-sm text-yellow-700 bg-yellow-100 p-3 rounded-lg border-l-4 border-yellow-500">
+            {notice}
+          </div>
+        )}
+
+        {/* Chat Messages */}
+        <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-2xl h-96 overflow-y-auto mb-6 flex flex-col gap-4">
+          {messages.map((msg, i) => (
+            <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+              <div className={`max-w-xs px-4 py-3 rounded-xl ${msg.role === "user"
+                ? "bg-purple-500 text-white rounded-br-none"
+                : "bg-green-200 text-black dark:bg-green-700 dark:text-white rounded-bl-none"
+                }`}>
+                <p>{msg.text}</p>
+              </div>
+            </div>
+          ))}
+          <div ref={chatEndRef} />
+        </div>
+
+        {/* Input Area */}
+        <div className="flex gap-3">
+          <input
+            className="flex-1 border-2 border-purple-300 p-3 rounded-lg bg-white dark:bg-gray-700 dark:text-white"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyPress}
+            placeholder="Ask me anything..."
+          />
+          <button
+            onClick={() => sendMessage()}
+            className="bg-purple-600 text-white font-bold px-6 rounded-lg"
+            disabled={loading}
+          >
+            {loading ? "Thinking..." : "Send"}
+          </button>
+        </div>
       </div>
-    </div>
+    </PageWrapper>
   );
 }

@@ -1,151 +1,200 @@
-import { useEffect, useState, useContext } from "react";
-import api from "../services/api";
+import { useState, useEffect, useContext, useMemo } from "react";
+import PageWrapper from "../components/layout/PageWrapper";
+import FlashCardView from "../components/flashcards/FlashCardView";
+import ReviewButtons from "../components/flashcards/ReviewButtons";
+import useFlashcardStats from "../hooks/useFlashcardStats";
+import { calculateSM2 } from "../utils/sm2";
 import { XpContext } from "../context/XpContext";
-import { supabase } from "../lib/supabase";
-import { AuthContext } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export default function Flashcards() {
-  const [flashcards, setFlashcards] = useState(
-    JSON.parse(localStorage.getItem("flashcards")) || [
+  const { addXp } = useContext(XpContext);
+  const navigate = useNavigate();
+
+  const [flashcards, setFlashcards] = useState(() => {
+    const saved = localStorage.getItem("flashcards");
+    if (saved) return JSON.parse(saved);
+
+    const now = Date.now();
+
+    return [
       {
+        id: 1,
         word: "Hello",
         meaning: "Hola",
-        strength: 0,
-        reviews: 0,
-        nextReview: Date.now(),
+        repetitions: 0,
+        easeFactor: 2.5,
+        interval: 1,
+        nextReview: now,
+        correctCount: 0,
+        wrongCount: 0,
       },
-      {
-        word: "Thanks",
-        meaning: "Gracias",
-        strength: 0,
-        reviews: 0,
-        nextReview: Date.now(),
-      },
-    ]
-  );
-
-  const { user } = useContext(AuthContext);
+    ];
+  });
 
   const [index, setIndex] = useState(0);
-  const [flip, setFlip] = useState(false);
 
-  const { addXp } = useContext(XpContext);
-
-  // Filter ready cards
-  const readyCards = flashcards.filter((card) => card.nextReview <= Date.now());
-
-  const currentCard = readyCards[index] || null;
-
-  // Load flashcards from API once
-  useEffect(() => {
-    api.get("/flashcards").then((res) => {
-      if (res.data && res.data.length > 0) setFlashcards(res.data);
-    });
-  }, []);
-
-  useEffect(() => {
-    const saveToCloud = async () => {
-      if (user) {
-        await supabase
-          .from("profiles")
-          .upsert({ id: user.id, flashcards });
-      }
-    };
-
-    saveToCloud();
+  const readyCards = useMemo(() => {
+    const now = Date.now();
+    return flashcards
+      .filter((c) => c.nextReview <= now)
+      .sort((a, b) => a.nextReview - b.nextReview); // oldest first
   }, [flashcards]);
 
-  // Save flashcards to localStorage whenever they update
+  const currentCard = readyCards[index] ?? null;
+
+  const stats = useFlashcardStats(flashcards);
+
   useEffect(() => {
     localStorage.setItem("flashcards", JSON.stringify(flashcards));
   }, [flashcards]);
 
-  const reviewCard = (difficulty) => {
+  const reviewCard = (quality) => {
     if (!currentCard) return;
 
-    const updatedCards = [...flashcards];
-    const cardIndex = flashcards.findIndex((c) => c.word === currentCard.word);
+    setFlashcards((prev) =>
+      prev.map((card) => {
+        if (card.id !== currentCard.id) return card;
 
-    if (cardIndex === -1) return;
+        const updated = calculateSM2(card, quality);
 
-    const card = updatedCards[cardIndex];
-    card.reviews += 1;
+        return {
+          ...card,
+          ...updated,
+          correctCount:
+            quality >= 3 ? card.correctCount + 1 : card.correctCount,
+          wrongCount:
+            quality < 3 ? card.wrongCount + 1 : card.wrongCount,
+        };
+      })
+    );
 
-    let interval;
-    if (difficulty === "easy") {
-      card.strength += 2;
-      interval = 1000 * 60 * 60 * 24 * 3; // 3 days
-      addXp(15);
-    } else if (difficulty === "medium") {
-      card.strength += 1;
-      interval = 1000 * 60 * 60 * 24 * 1; // 1 day
-      addXp(10);
-    } else {
-      card.strength = Math.max(0, card.strength - 1);
-      interval = 1000 * 60 * 10; // 10 minutes
-      addXp(5);
-    }
-
-    card.nextReview = Date.now() + interval;
-
-    setFlashcards(updatedCards);
-    setIndex((prev) => (prev + 1) % readyCards.length);
-    setFlip(false);
+    addXp(quality * 5);
+    setIndex((prev) => prev + 1);
   };
 
-  if (!currentCard) return <p className="p-6">No flashcards ready for review!</p>;
+  useEffect(() => {
+    const today = new Date().toDateString();
+    const lastReview = localStorage.getItem("lastReview");
+
+    if (lastReview !== today) {
+      const streak = Number(localStorage.getItem("streak") || 0);
+      localStorage.setItem("streak", streak + 1);
+      localStorage.setItem("lastReview", today);
+    }
+  }, []);
+
+  if (!currentCard) {
+
+    const nextDue = flashcards.length
+      ? Math.min(...flashcards.map((c) => c.nextReview))
+      : null;
+
+    const timeLeft = nextDue ? nextDue - Date.now() : 0;
+
+    const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+
+    const dueTomorrow = flashcards.filter(
+      (c) =>
+        c.nextReview > Date.now() &&
+        c.nextReview <= Date.now() + 24 * 60 * 60 * 1000
+    ).length;
+
+    return (
+      <PageWrapper title="Flashcards">
+        <div className="max-w-xl mx-auto text-center">
+
+          <h2 className="text-2xl font-bold mb-4">
+            🎉 You're done for today!
+          </h2>
+
+          {nextDue && (
+            <p className="mb-2">
+              ⏳ Next review in {hours}h {minutes}m
+            </p>
+          )}
+
+          <p className="mb-2">
+            📅 {dueTomorrow} cards due within 24 hours
+          </p>
+
+          <button
+            onClick={() => {
+              setFlashcards((prev) =>
+                prev.map((card) => ({
+                  ...card,
+                  nextReview: Date.now(),
+                }))
+              );
+            }}
+            className="mt-4 bg-purple-600 text-white px-4 py-2 rounded"
+          >
+            ⚡ Force Review Mode
+          </button>
+
+        </div>
+      </PageWrapper>
+    );
+  }
+
+  const achievements = [];
+
+  if (stats.accuracy >= 90) achievements.push("🎯 Accuracy Master");
+  if (flashcards.length >= 20) achievements.push("📚 Card Collector");
+  if ((localStorage.getItem("streak") || 0) >= 7)
+    achievements.push("🔥 7-Day Streak");
 
   return (
-    <div className="p-6 text-center">
-      <div
-        onClick={() => setFlip(!flip)}
-        className="bg-pink-200 p-12 rounded-xl cursor-pointer"
-      >
-        {flip ? currentCard.meaning : currentCard.word}
-      </div>
-
-      <div className="w-full bg-gray-200 h-3 rounded mb-4">
-        <div
-          className="bg-purple-500 h-3 rounded"
-          style={{ width: `${(currentCard.strength / 10) * 100}%` }}
-        />
-      </div>
-
-      <p className="mt-2 text-sm text-gray-600">
-        Mastery Level: {currentCard.strength}
-      </p>
-
-      <div className="flex gap-3 mt-4 justify-center">
+    <PageWrapper title="Flashcards">
+      <div className="max-w-xl mx-auto">
         <button
-          onClick={() => reviewCard("easy")}
-          className="bg-green-500 text-white px-3 py-1 rounded"
+          onClick={() => navigate(-1)}
+          className="mb-4 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
         >
-          Easy 😎
+          ⬅ Back
         </button>
 
-        <button
-          onClick={() => reviewCard("medium")}
-          className="bg-yellow-500 text-white px-3 py-1 rounded"
-        >
-          Medium 🙂
-        </button>
+        <p className="mb-2 text-blue-600 font-semibold">
+          📚 Due Today: {readyCards.length}
+        </p>
 
-        <button
-          onClick={() => reviewCard("hard")}
-          className="bg-red-500 text-white px-3 py-1 rounded"
-        >
-          Hard 😰
-        </button>
-      </div>
+        {/* Stats */}
 
-      <div className="mt-4 flex justify-center gap-4">
-        <button
-          onClick={() => setIndex((i) => (i + 1) % readyCards.length)}
-          className="bg-blue-500 text-white px-4 py-2 rounded"
-        >
-          Next
-        </button>
+        <p className="text-orange-600 font-bold">
+          🔥 Streak: {localStorage.getItem("streak") || 0} days
+        </p>
+
+        <div className="mt-4">
+          {achievements.map((a, i) => (
+            <p key={i} className="text-purple-700 font-semibold">
+              {a}
+            </p>
+          ))}
+        </div>
+
+        <p className="mb-4 text-sm text-gray-600">
+          Card {index + 1} of {readyCards.length}
+        </p>
+        <div className="w-full bg-gray-300 h-3 rounded-full mb-6">
+          <div
+            className="bg-green-500 h-3 rounded-full transition-all"
+            style={{
+              width: `${((index + 1) / readyCards.length) * 100}%`
+            }}
+          />
+        </div>
+
+        <div className="mb-6 p-4 bg-gray-200 rounded">
+          <p>Total Cards: {stats.total}</p>
+          <p>Accuracy: {stats.accuracy}%</p>
+        </div>
+
+        <FlashCardView card={currentCard} />
+
+        <ReviewButtons onReview={reviewCard} />
+
       </div>
-    </div>
+    </PageWrapper>
   );
 }

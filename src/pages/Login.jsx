@@ -17,13 +17,17 @@ export default function Login() {
       navigate("/");
     } catch (err) {
       console.error(err);
-      setError("Invalid email or password");
+      if (!err.response) {
+        setError("Network error or server unreachable");
+      } else {
+        setError("Invalid email or password");
+      }
     }
   };
 
   return (
     <div className="flex items-center justify-center h-screen bg-gradient-to-r from-purple-400 to-pink-400">
-      <form onSubmit={submit} className="bg-white p-8 rounded-xl w-80 shadow-lg">
+      <form onSubmit={submit} className="bg-white dark:bg-gray-800 p-8 rounded-xl w-80 shadow-lg">
         <h2 className="text-2xl font-bold mb-4 text-center">Login 🎉</h2>
 
         {error && (
@@ -48,7 +52,7 @@ export default function Login() {
           onChange={(e) => setForm({ ...form, password: e.target.value })}
         />
 
-        <button className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded transition">
+        <button type="submit" className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded transition">
           Login
         </button>
 

@@ -1,91 +1,116 @@
-import { NavLink } from "react-router-dom";
-import { Home, Book, Trophy, Mic } from "lucide-react";
-import { useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import {
+  Home,
+  Book,
+  Trophy,
+  Mic,
+  Type,
+  LogOut,
+  Menu,
+  X,
+} from "lucide-react";
+import { useState, useContext } from "react";
+import { useTheme } from "../../context/ThemeContext";
+import { useKidMode } from "../../context/KidModeContext";
+import { AuthContext } from "../../context/AuthContext";
 
 export default function Sidebar() {
   const [open, setOpen] = useState(false);
+  const { theme, toggleTheme } = useTheme();
+  const { kidMode, toggleKidMode } = useKidMode();
+  const { user, logout } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   const linkClass =
-    "flex items-center gap-2 p-2 rounded hover:bg-purple-500 transition";
-
+    "flex items-center gap-3 p-3 rounded-lg hover:bg-purple-500 transition";
   const activeClass = "bg-purple-700";
 
   return (
     <>
-      {/* Mobile Button */}
-      <button
-        onClick={() => setOpen(!open)}
-        className="md:hidden p-3 bg-purple-600 text-white"
-      >
-        ☰
-      </button>
-
-      <div
-        className={`bg-purple-600 text-white w-64 min-h-screen p-6
-        ${open ? "block" : "hidden"} md:block`}
-      >
-        <h1 className="text-2xl font-bold mb-8">FunLang 🎉</h1>
-
-        <nav className="space-y-3">
-          <NavLink
-            to="/"
-            end
-            className={({ isActive }) =>
-              `${linkClass} ${isActive ? activeClass : ""}`
-            }
-          >
-            <Home size={18} /> Dashboard
-          </NavLink>
-
-          <NavLink
-            to="/lessons"
-            className={({ isActive }) =>
-              `${linkClass} ${isActive ? activeClass : ""}`
-            }
-          >
-            <Book size={18} /> Lessons
-          </NavLink>
-
-          <NavLink
-            to="/flashcards"
-            className={({ isActive }) =>
-              `${linkClass} ${isActive ? activeClass : ""}`
-            }
-          >
-            🧠 Flashcards
-          </NavLink>
-
-          <NavLink
-            to="/speaking"
-            className={({ isActive }) =>
-              `${linkClass} ${isActive ? activeClass : ""}`
-            }
-          >
-            <Mic size={18} /> Speaking
-          </NavLink>
-
-          <NavLink
-            to="/leaderboard"
-            className={({ isActive }) =>
-              `${linkClass} ${isActive ? activeClass : ""}`
-            }
-          >
-            <Trophy size={18} /> Leaderboard
-          </NavLink>
-
-          <NavLink to="/achievements" className={({ isActive }) =>
-            `${linkClass} ${isActive ? activeClass : ""}`
-          }>
-            🏅 Achievements
-          </NavLink>
-
-          <NavLink to="/ai" className={({ isActive }) =>
-            `${linkClass} ${isActive ? activeClass : ""}`
-          }>
-            🤖 AI Tutor
-          </NavLink>
-        </nav>
+      {/* ===== MOBILE TOP BAR ===== */}
+      <div className="md:hidden p-4 bg-purple-600">
+        <button onClick={() => setOpen(true)}>
+          <Menu size={26} />
+        </button>
       </div>
+
+      {/* ===== SIDEBAR (FIXED WIDTH ONLY) ===== */}
+      <aside
+        className={`
+          fixed top-0 left-0 z-50  w-64
+          p-6 text-white
+          transform transition-transform duration-300
+          ${open ? "translate-x-0" : "-translate-x-full"}
+          md:translate-x-0 md:static
+          ${kidMode ? "bg-pink-600" : "bg-purple-600"}
+          ${theme === "dark" ? "dark:bg-gray-800" : ""}
+        `}
+      >
+        {/* Header */}
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-2xl font-bold">FunLang 🚀</h1>
+          <button className="md:hidden" onClick={() => setOpen(false)}>
+            <X size={24} />
+          </button>
+        </div>
+
+        {/* Links */}
+        <nav className="space-y-2">
+          {[
+            ["/", Home, "Dashboard"],
+            ["/lessons", Book, "Lessons"],
+            ["/flashcards", Book, "Flashcards"],
+            ["/speaking", Mic, "Speaking"],
+            ["/game", Book, "Game"],
+            ["/leaderboard", Trophy, "Leaderboard"],
+            ["/achievements", Trophy, "Achievements"],
+            ["/ai", Mic, "AI Tutor"],
+            ["/alphabet", Type, "Alphabet"],
+            ["/quiz", Type, "Quiz"],
+          ].map(([path, Icon, label]) => (
+            <NavLink
+              key={path}
+              to={path}
+              onClick={() => setOpen(false)}
+              className={({ isActive }) =>
+                `${linkClass} ${isActive ? activeClass : ""}`
+              }
+            >
+              <Icon size={18} />
+              {label}
+            </NavLink>
+          ))}
+        </nav>
+
+        {/* Toggles + Logout */}
+        <div className="mt-8 space-y-4 text-sm">
+          <label className="flex justify-between">
+            <span>Kid Mode</span>
+            <input type="checkbox" checked={kidMode} onChange={toggleKidMode} />
+          </label>
+
+          <label className="flex justify-between">
+            <span>Dark Mode</span>
+            <input
+              type="checkbox"
+              checked={theme === "dark"}
+              onChange={toggleTheme}
+            />
+          </label>
+
+          {user && (
+            <button
+              onClick={() => {
+                logout();
+                navigate("/login");
+              }}
+              className="flex items-center gap-2 mt-4 hover:text-red-300"
+            >
+              <LogOut size={16} /> Logout
+            </button>
+          )}
+        </div>
+      </aside>
     </>
   );
 }

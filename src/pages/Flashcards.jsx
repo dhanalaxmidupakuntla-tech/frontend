@@ -18,17 +18,21 @@ export default function Flashcards() {
     const now = Date.now();
 
     return [
-      {
-        id: 1,
-        word: "Hello",
-        meaning: "Hola",
-        repetitions: 0,
-        easeFactor: 2.5,
-        interval: 1,
-        nextReview: now,
-        correctCount: 0,
-        wrongCount: 0,
-      },
+      { id: 1, word: "Hello", meaning: "Hola", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
+      { id: 2, word: "Thank you", meaning: "Gracias", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
+      { id: 3, word: "Goodbye", meaning: "Adiós", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
+      { id: 4, word: "Please", meaning: "Por favor", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
+      { id: 5, word: "Yes", meaning: "Sí", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
+      { id: 6, word: "No", meaning: "No", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
+      { id: 7, word: "Good morning", meaning: "Buenos días", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
+      { id: 8, word: "Good night", meaning: "Buenas noches", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
+      { id: 9, word: "How are you?", meaning: "¿Cómo estás?", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
+      { id: 10, word: "I am fine", meaning: "Estoy bien", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
+      { id: 11, word: "What is your name?", meaning: "¿Cómo te llamas?", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
+      { id: 12, word: "My name is...", meaning: "Me llamo...", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
+      { id: 13, word: "Where are you from?", meaning: "¿De dónde eres?", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
+      { id: 14, word: "I don’t understand", meaning: "No entiendo", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
+      { id: 15, word: "Can you help me?", meaning: "¿Puedes ayudarme?", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
     ];
   });
 

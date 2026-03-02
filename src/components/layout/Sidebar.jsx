@@ -28,7 +28,7 @@ export default function Sidebar() {
   return (
     <>
       {/* ===== MOBILE TOP BAR ===== */}
-      <div className="md:hidden p-4 bg-purple-600">
+      <div className="p-4 bg-purple-600">
         <button onClick={() => setOpen(true)}>
           <Menu size={26} />
         </button>

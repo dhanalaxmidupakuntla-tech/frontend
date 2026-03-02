@@ -5,7 +5,17 @@ import PageWrapper from "../components/layout/PageWrapper";
 export default function Game() {
   const { addXp } = useXp();
 
-  // Default starter cards (used if localStorage empty)
+  // Difficulty Levels
+  const LEVELS = {
+    Easy: 5,
+    Medium: 10,
+    Hard: 20,
+  };
+
+  const [difficulty, setDifficulty] = useState("Medium");
+  const QUESTION_LIMIT = LEVELS[difficulty];
+
+  // Default fallback cards
   const defaultCards = [
     { word: "Hello", meaning: "Hola" },
     { word: "Thank you", meaning: "Gracias" },
@@ -31,12 +41,13 @@ export default function Game() {
   const [lives, setLives] = useState(3);
   const [questionCount, setQuestionCount] = useState(0);
   const [usedIndexes, setUsedIndexes] = useState([]);
+  const [gameOver, setGameOver] = useState(false);
 
   useEffect(() => {
     if (cards.length >= 4) {
       pickCard();
     }
-  }, []);
+  }, [difficulty]);
 
   const shuffleArray = (arr) => {
     const copy = [...arr];
@@ -54,7 +65,6 @@ export default function Game() {
       .map((_, i) => i)
       .filter((i) => !usedIndexes.includes(i));
 
-    // Reset when all words used
     if (availableIndexes.length === 0) {
       setUsedIndexes([]);
       availableIndexes = cards.map((_, i) => i);
@@ -83,7 +93,7 @@ export default function Game() {
   };
 
   const handleChoice = (choice) => {
-    if (!current || lives <= 0) return;
+    if (!current || gameOver) return;
 
     const isCorrect = choice === current.meaning;
 
@@ -96,13 +106,19 @@ export default function Game() {
       setLives((prev) => prev - 1);
     }
 
-    setQuestionCount((prev) => prev + 1);
+    const newQuestionCount = questionCount + 1;
+    setQuestionCount(newQuestionCount);
 
     setTimeout(() => {
-      if (lives - (isCorrect ? 0 : 1) > 0) {
+      if (
+        lives - (isCorrect ? 0 : 1) <= 0 ||
+        newQuestionCount >= QUESTION_LIMIT
+      ) {
+        setGameOver(true);
+      } else {
         pickCard();
       }
-    }, 1200);
+    }, 1000);
   };
 
   const restartGame = () => {
@@ -110,26 +126,40 @@ export default function Game() {
     setLives(3);
     setQuestionCount(0);
     setUsedIndexes([]);
+    setGameOver(false);
     pickCard();
   };
 
-  if (cards.length < 100) {
+  if (cards.length < 4) {
     return (
       <PageWrapper title="Game">
         <div className="text-center">
-          <p>You need at least 100 flashcards to play.</p>
+          <p>You need at least 4 flashcards to play.</p>
         </div>
       </PageWrapper>
     );
   }
 
-  const progress = (questionCount / cards.length) * 100;
+  const progress = (questionCount / QUESTION_LIMIT) * 100;
 
   return (
     <PageWrapper title="Word Quiz Game">
       <div className="max-w-2xl mx-auto text-center">
 
-        {/* Score + Lives */}
+        {/* Difficulty Selector */}
+        <div className="mb-6">
+          <select
+            value={difficulty}
+            onChange={(e) => setDifficulty(e.target.value)}
+            className="border p-2 rounded"
+          >
+            <option>Easy</option>
+            <option>Medium</option>
+            <option>Hard</option>
+          </select>
+        </div>
+
+        {/* Score & Lives */}
         <div className="flex justify-between mb-6">
           <p className="text-lg font-bold">Score: {score}</p>
           <p className="text-lg font-bold text-red-500">
@@ -145,9 +175,11 @@ export default function Game() {
           />
         </div>
 
-        {lives <= 0 ? (
+        {gameOver ? (
           <div>
-            <h2 className="text-3xl font-bold mb-4">Game Over 💀</h2>
+            <h2 className="text-3xl font-bold mb-4">
+              {lives <= 0 ? "Game Over 💀" : "Level Complete 🎉"}
+            </h2>
             <p className="text-xl mb-6">Final Score: {score}</p>
             <button
               onClick={restartGame}

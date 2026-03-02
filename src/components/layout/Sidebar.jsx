@@ -28,7 +28,7 @@ export default function Sidebar() {
   return (
     <>
       {/* ===== MOBILE TOP BAR ===== */}
-      <div className="mt-8 space-y-4 bg-purple-600">
+      <div className="mt-8 bg-purple-600">
         <button onClick={() => setOpen(true)}>
           <Menu size={26} />
         </button>

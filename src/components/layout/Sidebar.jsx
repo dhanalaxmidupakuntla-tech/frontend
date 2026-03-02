@@ -29,7 +29,7 @@ export default function Sidebar() {
   return (
     <aside
       className={`
-        fixed top-0 left-0 h-screen z-50
+        h-screen z-50
         w-20 md:w-64
         p-4 md:p-6
         text-white
@@ -39,7 +39,7 @@ export default function Sidebar() {
       `}
     >
       {/* ===== MENU ICON (Top) ===== */}
-      <div className="flex justify-center md:justify-between items-center mb-8">
+      <div className="flex justify-center md:justify-between items-center mb-4">
         {/* Mobile: show only menu icon */}
         <button
           onClick={() => setOpen(!open)}

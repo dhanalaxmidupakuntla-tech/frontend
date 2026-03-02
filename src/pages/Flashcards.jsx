@@ -11,6 +11,11 @@ export default function Flashcards() {
   const { addXp } = useContext(XpContext);
   const navigate = useNavigate();
 
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [newWord, setNewWord] = useState("");
+  const [newMeaning, setNewMeaning] = useState("");
+  const [newCategory, setNewCategory] = useState("Basics");
+
   const [flashcards, setFlashcards] = useState(() => {
     const saved = localStorage.getItem("flashcards");
     if (saved) return JSON.parse(saved);
@@ -18,21 +23,14 @@ export default function Flashcards() {
     const now = Date.now();
 
     return [
-      { id: 1, word: "Hello", meaning: "Hola", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
-      { id: 2, word: "Thank you", meaning: "Gracias", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
-      { id: 3, word: "Goodbye", meaning: "Adiós", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
-      { id: 4, word: "Please", meaning: "Por favor", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
-      { id: 5, word: "Yes", meaning: "Sí", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
-      { id: 6, word: "No", meaning: "No", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
-      { id: 7, word: "Good morning", meaning: "Buenos días", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
-      { id: 8, word: "Good night", meaning: "Buenas noches", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
-      { id: 9, word: "How are you?", meaning: "¿Cómo estás?", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
-      { id: 10, word: "I am fine", meaning: "Estoy bien", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
-      { id: 11, word: "What is your name?", meaning: "¿Cómo te llamas?", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
-      { id: 12, word: "My name is...", meaning: "Me llamo...", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
-      { id: 13, word: "Where are you from?", meaning: "¿De dónde eres?", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
-      { id: 14, word: "I don’t understand", meaning: "No entiendo", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
-      { id: 15, word: "Can you help me?", meaning: "¿Puedes ayudarme?", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
+      { id: 1, word: "Hello", meaning: "Hola", category: "Basics", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
+      { id: 2, word: "Thank you", meaning: "Gracias", category: "Basics", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
+      { id: 3, word: "Airport", meaning: "Aeropuerto", category: "Travel", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
+      { id: 4, word: "Hotel", meaning: "Hotel", category: "Travel", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
+      { id: 5, word: "Water", meaning: "Agua", category: "Food", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
+      { id: 6, word: "Bread", meaning: "Pan", category: "Food", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
+      { id: 7, word: "One", meaning: "Uno", category: "Numbers", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
+      { id: 8, word: "Two", meaning: "Dos", category: "Numbers", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
     ];
   });
 
@@ -42,8 +40,11 @@ export default function Flashcards() {
     const now = Date.now();
     return flashcards
       .filter((c) => c.nextReview <= now)
-      .sort((a, b) => a.nextReview - b.nextReview); // oldest first
-  }, [flashcards]);
+      .filter((c) =>
+        selectedCategory === "All" ? true : c.category === selectedCategory
+      )
+      .sort((a, b) => a.nextReview - b.nextReview);
+  }, [flashcards, selectedCategory]);
 
   const currentCard = readyCards[index] ?? null;
 
@@ -77,6 +78,27 @@ export default function Flashcards() {
     setIndex((prev) => prev + 1);
   };
 
+  const addNewCard = () => {
+    if (!newWord || !newMeaning) return;
+
+    const newCard = {
+      id: Date.now(),
+      word: newWord,
+      meaning: newMeaning,
+      category: newCategory,
+      repetitions: 0,
+      easeFactor: 2.5,
+      interval: 1,
+      nextReview: Date.now(),
+      correctCount: 0,
+      wrongCount: 0,
+    };
+
+    setFlashcards((prev) => [...prev, newCard]);
+    setNewWord("");
+    setNewMeaning("");
+  };
+
   useEffect(() => {
     const today = new Date().toDateString();
     const lastReview = localStorage.getItem("lastReview");
@@ -89,61 +111,32 @@ export default function Flashcards() {
   }, []);
 
   if (!currentCard) {
-
-    const nextDue = flashcards.length
-      ? Math.min(...flashcards.map((c) => c.nextReview))
-      : null;
-
-    const timeLeft = nextDue ? nextDue - Date.now() : 0;
-
-    const hours = Math.floor(timeLeft / (1000 * 60 * 60));
-    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-
-    const dueTomorrow = flashcards.filter(
-      (c) =>
-        c.nextReview > Date.now() &&
-        c.nextReview <= Date.now() + 24 * 60 * 60 * 1000
-    ).length;
-
     return (
       <PageWrapper title="Flashcards">
         <div className="max-w-xl mx-auto text-center">
-
           <h2 className="text-2xl font-bold mb-4">
             🎉 You're done for today!
           </h2>
 
-          {nextDue && (
-            <p className="mb-2">
-              ⏳ Next review in {hours}h {minutes}m
-            </p>
-          )}
-
-          <p className="mb-2">
-            📅 {dueTomorrow} cards due within 24 hours
-          </p>
-
           <button
-            onClick={() => {
+            onClick={() =>
               setFlashcards((prev) =>
                 prev.map((card) => ({
                   ...card,
                   nextReview: Date.now(),
                 }))
-              );
-            }}
+              )
+            }
             className="mt-4 bg-purple-600 text-white px-4 py-2 rounded"
           >
             ⚡ Force Review Mode
           </button>
-
         </div>
       </PageWrapper>
     );
   }
 
   const achievements = [];
-
   if (stats.accuracy >= 90) achievements.push("🎯 Accuracy Master");
   if (flashcards.length >= 20) achievements.push("📚 Card Collector");
   if ((localStorage.getItem("streak") || 0) >= 7)
@@ -154,22 +147,35 @@ export default function Flashcards() {
       <div className="max-w-xl mx-auto">
         <button
           onClick={() => navigate(-1)}
-          className="mb-4 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+          className="mb-4 bg-gray-500 text-white px-4 py-2 rounded"
         >
           ⬅ Back
         </button>
 
-        <p className="mb-2 text-blue-600 font-semibold">
+        {/* Category Filter */}
+        <div className="mb-4">
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="border p-2 rounded w-full"
+          >
+            <option>All</option>
+            <option>Basics</option>
+            <option>Travel</option>
+            <option>Food</option>
+            <option>Numbers</option>
+          </select>
+        </div>
+
+        <p className="text-blue-600 font-semibold">
           📚 Due Today: {readyCards.length}
         </p>
-
-        {/* Stats */}
 
         <p className="text-orange-600 font-bold">
           🔥 Streak: {localStorage.getItem("streak") || 0} days
         </p>
 
-        <div className="mt-4">
+        <div className="mt-2">
           {achievements.map((a, i) => (
             <p key={i} className="text-purple-700 font-semibold">
               {a}
@@ -177,14 +183,15 @@ export default function Flashcards() {
           ))}
         </div>
 
-        <p className="mb-4 text-sm text-gray-600">
+        <p className="mt-4 text-sm text-gray-600">
           Card {index + 1} of {readyCards.length}
         </p>
+
         <div className="w-full bg-gray-300 h-3 rounded-full mb-6">
           <div
             className="bg-green-500 h-3 rounded-full transition-all"
             style={{
-              width: `${((index + 1) / readyCards.length) * 100}%`
+              width: `${((index + 1) / readyCards.length) * 100}%`,
             }}
           />
         </div>
@@ -195,9 +202,46 @@ export default function Flashcards() {
         </div>
 
         <FlashCardView card={currentCard} />
-
         <ReviewButtons onReview={reviewCard} />
 
+        {/* Add Card Form */}
+        <div className="mt-8 p-4 bg-gray-100 rounded">
+          <h3 className="font-bold mb-2">➕ Add New Card</h3>
+
+          <input
+            type="text"
+            placeholder="Word"
+            value={newWord}
+            onChange={(e) => setNewWord(e.target.value)}
+            className="border p-2 rounded w-full mb-2"
+          />
+
+          <input
+            type="text"
+            placeholder="Meaning"
+            value={newMeaning}
+            onChange={(e) => setNewMeaning(e.target.value)}
+            className="border p-2 rounded w-full mb-2"
+          />
+
+          <select
+            value={newCategory}
+            onChange={(e) => setNewCategory(e.target.value)}
+            className="border p-2 rounded w-full mb-2"
+          >
+            <option>Basics</option>
+            <option>Travel</option>
+            <option>Food</option>
+            <option>Numbers</option>
+          </select>
+
+          <button
+            onClick={addNewCard}
+            className="bg-purple-600 text-white px-4 py-2 rounded w-full"
+          >
+            Add Card
+          </button>
+        </div>
       </div>
     </PageWrapper>
   );

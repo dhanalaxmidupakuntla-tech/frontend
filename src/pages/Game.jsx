@@ -113,11 +113,11 @@ export default function Game() {
     pickCard();
   };
 
-  if (cards.length < 4) {
+  if (cards.length < 100) {
     return (
       <PageWrapper title="Game">
         <div className="text-center">
-          <p>You need at least 4 flashcards to play.</p>
+          <p>You need at least 100 flashcards to play.</p>
         </div>
       </PageWrapper>
     );

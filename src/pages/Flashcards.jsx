@@ -12,6 +12,9 @@ export default function Flashcards() {
   const navigate = useNavigate();
 
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [shuffleMode, setShuffleMode] = useState(false);
+  const [level, setLevel] = useState("Beginner");
+
   const [newWord, setNewWord] = useState("");
   const [newMeaning, setNewMeaning] = useState("");
   const [newCategory, setNewCategory] = useState("Basics");
@@ -29,30 +32,45 @@ export default function Flashcards() {
       { id: 4, word: "Hotel", meaning: "Hotel", category: "Travel", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
       { id: 5, word: "Water", meaning: "Agua", category: "Food", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
       { id: 6, word: "Bread", meaning: "Pan", category: "Food", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
-      { id: 7, word: "One", meaning: "Uno", category: "Numbers", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
-      { id: 8, word: "Two", meaning: "Dos", category: "Numbers", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
     ];
   });
 
   const [index, setIndex] = useState(0);
 
+  const stats = useFlashcardStats(flashcards);
+
+  // Auto Level Upgrade
+  useEffect(() => {
+    if (stats.accuracy >= 90) setLevel("Advanced");
+    else if (stats.accuracy >= 70) setLevel("Intermediate");
+    else setLevel("Beginner");
+  }, [stats.accuracy]);
+
   const readyCards = useMemo(() => {
     const now = Date.now();
-    return flashcards
+
+    let filtered = flashcards
       .filter((c) => c.nextReview <= now)
       .filter((c) =>
         selectedCategory === "All" ? true : c.category === selectedCategory
-      )
-      .sort((a, b) => a.nextReview - b.nextReview);
-  }, [flashcards, selectedCategory]);
+      );
+
+    if (shuffleMode) {
+      return [...filtered].sort(() => Math.random() - 0.5);
+    }
+
+    return filtered.sort((a, b) => a.nextReview - b.nextReview);
+  }, [flashcards, selectedCategory, shuffleMode]);
 
   const currentCard = readyCards[index] ?? null;
-
-  const stats = useFlashcardStats(flashcards);
 
   useEffect(() => {
     localStorage.setItem("flashcards", JSON.stringify(flashcards));
   }, [flashcards]);
+
+  useEffect(() => {
+    setIndex(0);
+  }, [selectedCategory, shuffleMode]);
 
   const reviewCard = (quality) => {
     if (!currentCard) return;
@@ -75,7 +93,21 @@ export default function Flashcards() {
     );
 
     addXp(quality * 5);
-    setIndex((prev) => prev + 1);
+    nextCard();
+  };
+
+  const nextCard = () => {
+    if (index < readyCards.length - 1) {
+      setIndex((prev) => prev + 1);
+    } else {
+      setIndex(0);
+    }
+  };
+
+  const prevCard = () => {
+    if (index > 0) {
+      setIndex((prev) => prev - 1);
+    }
   };
 
   const addNewCard = () => {
@@ -99,52 +131,20 @@ export default function Flashcards() {
     setNewMeaning("");
   };
 
-  useEffect(() => {
-    const today = new Date().toDateString();
-    const lastReview = localStorage.getItem("lastReview");
-
-    if (lastReview !== today) {
-      const streak = Number(localStorage.getItem("streak") || 0);
-      localStorage.setItem("streak", streak + 1);
-      localStorage.setItem("lastReview", today);
-    }
-  }, []);
-
   if (!currentCard) {
     return (
       <PageWrapper title="Flashcards">
-        <div className="max-w-xl mx-auto text-center">
-          <h2 className="text-2xl font-bold mb-4">
-            🎉 You're done for today!
-          </h2>
-
-          <button
-            onClick={() =>
-              setFlashcards((prev) =>
-                prev.map((card) => ({
-                  ...card,
-                  nextReview: Date.now(),
-                }))
-              )
-            }
-            className="mt-4 bg-purple-600 text-white px-4 py-2 rounded"
-          >
-            ⚡ Force Review Mode
-          </button>
+        <div className="text-center">
+          <h2 className="text-2xl font-bold">🎉 You're done for today!</h2>
         </div>
       </PageWrapper>
     );
   }
 
-  const achievements = [];
-  if (stats.accuracy >= 90) achievements.push("🎯 Accuracy Master");
-  if (flashcards.length >= 20) achievements.push("📚 Card Collector");
-  if ((localStorage.getItem("streak") || 0) >= 7)
-    achievements.push("🔥 7-Day Streak");
-
   return (
     <PageWrapper title="Flashcards">
       <div className="max-w-xl mx-auto">
+
         <button
           onClick={() => navigate(-1)}
           className="mb-4 bg-gray-500 text-white px-4 py-2 rounded"
@@ -152,38 +152,33 @@ export default function Flashcards() {
           ⬅ Back
         </button>
 
-        {/* Category Filter */}
-        <div className="mb-4">
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="border p-2 rounded w-full"
-          >
-            <option>All</option>
-            <option>Basics</option>
-            <option>Travel</option>
-            <option>Food</option>
-            <option>Numbers</option>
-          </select>
+        {/* Level Badge */}
+        <div className="mb-3 font-bold text-purple-700">
+          🏆 Level: {level}
         </div>
 
-        <p className="text-blue-600 font-semibold">
-          📚 Due Today: {readyCards.length}
-        </p>
+        {/* Category */}
+        <select
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+          className="border p-2 rounded w-full mb-3"
+        >
+          <option>All</option>
+          <option>Basics</option>
+          <option>Travel</option>
+          <option>Food</option>
+        </select>
 
-        <p className="text-orange-600 font-bold">
-          🔥 Streak: {localStorage.getItem("streak") || 0} days
-        </p>
+        {/* Shuffle Toggle */}
+        <button
+          onClick={() => setShuffleMode(!shuffleMode)}
+          className="mb-4 bg-indigo-600 text-white px-4 py-2 rounded w-full"
+        >
+          🔀 Shuffle: {shuffleMode ? "ON" : "OFF"}
+        </button>
 
-        <div className="mt-2">
-          {achievements.map((a, i) => (
-            <p key={i} className="text-purple-700 font-semibold">
-              {a}
-            </p>
-          ))}
-        </div>
-
-        <p className="mt-4 text-sm text-gray-600">
+        {/* Progress */}
+        <p className="text-sm text-gray-600 mb-2">
           Card {index + 1} of {readyCards.length}
         </p>
 
@@ -196,15 +191,27 @@ export default function Flashcards() {
           />
         </div>
 
-        <div className="mb-6 p-4 bg-gray-200 rounded">
-          <p>Total Cards: {stats.total}</p>
-          <p>Accuracy: {stats.accuracy}%</p>
-        </div>
-
         <FlashCardView card={currentCard} />
         <ReviewButtons onReview={reviewCard} />
 
-        {/* Add Card Form */}
+        {/* Navigation Buttons */}
+        <div className="flex gap-2 mt-4">
+          <button
+            onClick={prevCard}
+            className="bg-gray-600 text-white px-4 py-2 rounded w-full"
+          >
+            ⬅ Previous
+          </button>
+
+          <button
+            onClick={nextCard}
+            className="bg-blue-600 text-white px-4 py-2 rounded w-full"
+          >
+            ➡ Next
+          </button>
+        </div>
+
+        {/* Add New Card */}
         <div className="mt-8 p-4 bg-gray-100 rounded">
           <h3 className="font-bold mb-2">➕ Add New Card</h3>
 
@@ -232,7 +239,6 @@ export default function Flashcards() {
             <option>Basics</option>
             <option>Travel</option>
             <option>Food</option>
-            <option>Numbers</option>
           </select>
 
           <button
@@ -242,6 +248,7 @@ export default function Flashcards() {
             Add Card
           </button>
         </div>
+
       </div>
     </PageWrapper>
   );

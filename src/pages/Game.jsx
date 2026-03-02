@@ -5,6 +5,7 @@ import PageWrapper from "../components/layout/PageWrapper";
 export default function Game() {
   const { addXp } = useXp();
 
+  // Default starter cards (used if localStorage empty)
   const defaultCards = [
     { word: "Hello", meaning: "Hola" },
     { word: "Thank you", meaning: "Gracias" },
@@ -21,9 +22,7 @@ export default function Game() {
   const storedCards =
     JSON.parse(localStorage.getItem("flashcards")) || [];
 
-  const [cards] = useState(
-    storedCards.length ? storedCards : defaultCards
-  );
+  const cards = storedCards.length ? storedCards : defaultCards;
 
   const [current, setCurrent] = useState(null);
   const [choices, setChoices] = useState([]);
@@ -31,9 +30,12 @@ export default function Game() {
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
   const [questionCount, setQuestionCount] = useState(0);
+  const [usedIndexes, setUsedIndexes] = useState([]);
 
   useEffect(() => {
-    if (cards.length) pickCard();
+    if (cards.length >= 4) {
+      pickCard();
+    }
   }, []);
 
   const shuffleArray = (arr) => {
@@ -46,26 +48,46 @@ export default function Game() {
   };
 
   const pickCard = () => {
-    const idx = Math.floor(Math.random() * cards.length);
-    const card = cards[idx];
+    if (cards.length < 4) return;
+
+    let availableIndexes = cards
+      .map((_, i) => i)
+      .filter((i) => !usedIndexes.includes(i));
+
+    // Reset when all words used
+    if (availableIndexes.length === 0) {
+      setUsedIndexes([]);
+      availableIndexes = cards.map((_, i) => i);
+    }
+
+    const randomIndex =
+      availableIndexes[Math.floor(Math.random() * availableIndexes.length)];
+
+    const card = cards[randomIndex];
 
     const wrongOptions = shuffleArray(
       cards
-        .filter((c, i) => i !== idx)
+        .filter((_, i) => i !== randomIndex)
         .map((c) => c.meaning)
     ).slice(0, 3);
 
-    const options = shuffleArray([card.meaning, ...wrongOptions]);
+    const options = shuffleArray([
+      card.meaning,
+      ...wrongOptions,
+    ]);
 
     setCurrent(card);
     setChoices(options);
+    setUsedIndexes((prev) => [...prev, randomIndex]);
     setFeedback("");
   };
 
   const handleChoice = (choice) => {
     if (!current || lives <= 0) return;
 
-    if (choice === current.meaning) {
+    const isCorrect = choice === current.meaning;
+
+    if (isCorrect) {
       setFeedback("Correct! 🎉");
       setScore((prev) => prev + 10);
       addXp(10);
@@ -77,7 +99,7 @@ export default function Game() {
     setQuestionCount((prev) => prev + 1);
 
     setTimeout(() => {
-      if (lives - (choice !== current.meaning ? 1 : 0) > 0) {
+      if (lives - (isCorrect ? 0 : 1) > 0) {
         pickCard();
       }
     }, 1200);
@@ -87,20 +109,21 @@ export default function Game() {
     setScore(0);
     setLives(3);
     setQuestionCount(0);
+    setUsedIndexes([]);
     pickCard();
   };
 
-  if (!cards.length) {
+  if (cards.length < 4) {
     return (
       <PageWrapper title="Game">
         <div className="text-center">
-          <p>You need flashcards to play!</p>
+          <p>You need at least 4 flashcards to play.</p>
         </div>
       </PageWrapper>
     );
   }
 
-  const progress = (questionCount / 20) * 100;
+  const progress = (questionCount / cards.length) * 100;
 
   return (
     <PageWrapper title="Word Quiz Game">
@@ -114,7 +137,7 @@ export default function Game() {
           </p>
         </div>
 
-        {/* Progress */}
+        {/* Progress Bar */}
         <div className="w-full bg-gray-300 h-3 rounded-full mb-8">
           <div
             className="bg-purple-600 h-3 rounded-full transition-all"

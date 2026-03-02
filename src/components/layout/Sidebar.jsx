@@ -8,7 +8,6 @@ import {
   LogOut,
   Menu,
   X,
-  Icon,
 } from "lucide-react";
 import { useState, useContext } from "react";
 import { useTheme } from "../../context/ThemeContext";
@@ -22,26 +21,28 @@ export default function Sidebar() {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
+  // Updated link styles
   const linkClass =
-    "flex items-center gap-3 p-3 rounded-lg hover:bg-purple-500 transition";
+    "flex items-center justify-center md:justify-start gap-3 p-3 rounded-lg hover:bg-purple-500 transition";
+
   const activeClass = "bg-purple-700";
 
   return (
     <>
       {/* ===== MOBILE TOP BAR ===== */}
-      <div className="md:hidden p-4 bg-purple-600">
+      <div className="md:hidden p-4 bg-purple-600 flex justify-between items-center text-white">
+        <h1 className="text-lg font-bold">FunLang 🚀</h1>
         <button onClick={() => setOpen(true)}>
           <Menu size={26} />
         </button>
-
-        <Icon size={18} />
       </div>
 
-      {/* ===== SIDEBAR (FIXED WIDTH ONLY) ===== */}
+      {/* ===== SIDEBAR ===== */}
       <aside
         className={`
-          fixed top-0 left-0 z-50  w-64
-          p-6 text-white
+          fixed top-0 left-0 z-50 w-20 md:w-64
+          h-full
+          p-4 md:p-6 text-white
           transform transition-transform duration-300
           ${open ? "translate-x-0" : "-translate-x-full"}
           md:translate-x-0 md:static
@@ -51,7 +52,9 @@ export default function Sidebar() {
       >
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold">FunLang 🚀</h1>
+          <h1 className="hidden md:block text-2xl font-bold">
+            FunLang 🚀
+          </h1>
           <button className="md:hidden" onClick={() => setOpen(false)}>
             <X size={24} />
           </button>
@@ -79,20 +82,21 @@ export default function Sidebar() {
                 `${linkClass} ${isActive ? activeClass : ""}`
               }
             >
-              <Icon size={18} />
-              {label}
+              <Icon size={20} />
+              {/* Hide text on mobile, show on desktop */}
+              <span className="hidden md:inline">{label}</span>
             </NavLink>
           ))}
         </nav>
 
         {/* Toggles + Logout */}
-        <div className="mt-8 space-y-4 text-sm">
-          <label className="flex justify-between">
+        <div className="mt-8 space-y-4 text-sm hidden md:block">
+          <label className="flex justify-between items-center">
             <span>Kid Mode</span>
             <input type="checkbox" checked={kidMode} onChange={toggleKidMode} />
           </label>
 
-          <label className="flex justify-between">
+          <label className="flex justify-between items-center">
             <span>Dark Mode</span>
             <input
               type="checkbox"
@@ -109,7 +113,8 @@ export default function Sidebar() {
               }}
               className="flex items-center gap-2 mt-4 hover:text-red-300"
             >
-              <LogOut size={16} /> Logout
+              <LogOut size={16} />
+              <span>Logout</span>
             </button>
           )}
         </div>

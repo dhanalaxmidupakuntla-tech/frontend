@@ -3,89 +3,175 @@ import { useXp } from "../context/XpContext";
 import PageWrapper from "../components/layout/PageWrapper";
 
 export default function Game() {
-  const [cards, setCards] = useState(
-    JSON.parse(localStorage.getItem("flashcards")) || []
-  );
   const { addXp } = useXp();
+
+  const defaultCards = [
+    { word: "Hello", meaning: "Hola" },
+    { word: "Thank you", meaning: "Gracias" },
+    { word: "Goodbye", meaning: "Adiós" },
+    { word: "Water", meaning: "Agua" },
+    { word: "Bread", meaning: "Pan" },
+    { word: "One", meaning: "Uno" },
+    { word: "Two", meaning: "Dos" },
+    { word: "Airport", meaning: "Aeropuerto" },
+    { word: "Hotel", meaning: "Hotel" },
+    { word: "Friend", meaning: "Amigo" },
+  ];
+
+  const storedCards =
+    JSON.parse(localStorage.getItem("flashcards")) || [];
+
+  const [cards] = useState(
+    storedCards.length ? storedCards : defaultCards
+  );
+
   const [current, setCurrent] = useState(null);
   const [choices, setChoices] = useState([]);
   const [feedback, setFeedback] = useState("");
+  const [score, setScore] = useState(0);
+  const [lives, setLives] = useState(3);
+  const [questionCount, setQuestionCount] = useState(0);
 
   useEffect(() => {
     if (cards.length) pickCard();
-  }, [cards]);
+  }, []);
+
+  const shuffleArray = (arr) => {
+    const copy = [...arr];
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
+  };
 
   const pickCard = () => {
     const idx = Math.floor(Math.random() * cards.length);
     const card = cards[idx];
 
-    // build choices: correct meaning + 3 others
-    const otherMeanings = cards
-      .filter((c, i) => i !== idx)
-      .map((c) => c.meaning);
-    shuffleArray(otherMeanings);
-    const opts = [card.meaning, ...otherMeanings.slice(0, 3)];
-    shuffleArray(opts);
+    const wrongOptions = shuffleArray(
+      cards
+        .filter((c, i) => i !== idx)
+        .map((c) => c.meaning)
+    ).slice(0, 3);
+
+    const options = shuffleArray([card.meaning, ...wrongOptions]);
 
     setCurrent(card);
-    setChoices(opts);
+    setChoices(options);
     setFeedback("");
   };
 
-  const shuffleArray = (arr) => {
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-  };
-
   const handleChoice = (choice) => {
-    if (!current) return;
+    if (!current || lives <= 0) return;
+
     if (choice === current.meaning) {
       setFeedback("Correct! 🎉");
+      setScore((prev) => prev + 10);
       addXp(10);
     } else {
-      setFeedback(`Oops, the right answer was "${current.meaning}".`);
+      setFeedback(`Wrong! Correct answer: ${current.meaning}`);
+      setLives((prev) => prev - 1);
     }
-    setTimeout(pickCard, 1500);
+
+    setQuestionCount((prev) => prev + 1);
+
+    setTimeout(() => {
+      if (lives - (choice !== current.meaning ? 1 : 0) > 0) {
+        pickCard();
+      }
+    }, 1200);
+  };
+
+  const restartGame = () => {
+    setScore(0);
+    setLives(3);
+    setQuestionCount(0);
+    pickCard();
   };
 
   if (!cards.length) {
     return (
       <PageWrapper title="Game">
         <div className="text-center">
-          <p className="text-lg text-gray-600 dark:text-gray-300">You need to add some flashcards first.</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Go to Flashcards to create new cards!</p>
+          <p>You need flashcards to play!</p>
         </div>
       </PageWrapper>
     );
   }
 
+  const progress = (questionCount / 20) * 100;
+
   return (
     <PageWrapper title="Word Quiz Game">
-      <div className="max-w-2xl mx-auto">
-        <h3 className="text-3xl font-bold mb-8 text-center">🎮 What is the meaning?</h3>
-        {current && (
+      <div className="max-w-2xl mx-auto text-center">
+
+        {/* Score + Lives */}
+        <div className="flex justify-between mb-6">
+          <p className="text-lg font-bold">Score: {score}</p>
+          <p className="text-lg font-bold text-red-500">
+            Lives: {"❤️".repeat(lives)}
+          </p>
+        </div>
+
+        {/* Progress */}
+        <div className="w-full bg-gray-300 h-3 rounded-full mb-8">
+          <div
+            className="bg-purple-600 h-3 rounded-full transition-all"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+
+        {lives <= 0 ? (
+          <div>
+            <h2 className="text-3xl font-bold mb-4">Game Over 💀</h2>
+            <p className="text-xl mb-6">Final Score: {score}</p>
+            <button
+              onClick={restartGame}
+              className="bg-purple-600 text-white px-6 py-3 rounded-xl"
+            >
+              🔄 Play Again
+            </button>
+          </div>
+        ) : (
           <>
-            <div className="bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900 dark:to-pink-900 p-8 rounded-2xl shadow-lg mb-8">
-              <p className="text-center text-gray-600 dark:text-gray-300 text-sm mb-4">Translate this word</p>
-              <p className="text-center text-5xl font-bold text-purple-700 dark:text-purple-300">{current.word}</p>
-            </div>
-            <div className="grid grid-cols-1 gap-4 mb-8">
-              {choices.map((c, i) => (
-                <button
-                  key={i}
-                  onClick={() => handleChoice(c)}
-                  className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 dark:from-purple-700 dark:to-indigo-700 dark:hover:from-purple-600 dark:hover:to-indigo-600 text-white font-bold py-4 px-6 rounded-xl transition transform hover:scale-105 active:scale-95 text-lg shadow-md"
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
-            {feedback && (
-              <div className={`text-center text-xl font-bold p-4 rounded-lg ${feedback.includes('Correct') ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'}`} aria-live="polite">
-                {feedback}
-              </div>
+            <h3 className="text-3xl font-bold mb-8">
+              🎮 What is the meaning?
+            </h3>
+
+            {current && (
+              <>
+                <div className="bg-gradient-to-r from-purple-100 to-pink-100 p-8 rounded-2xl shadow-lg mb-8">
+                  <p className="text-sm mb-4">Translate this word</p>
+                  <p className="text-5xl font-bold text-purple-700">
+                    {current.word}
+                  </p>
+                </div>
+
+                <div className="grid gap-4 mb-6">
+                  {choices.map((c, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleChoice(c)}
+                      className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-xl transition transform hover:scale-105"
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+
+                {feedback && (
+                  <div
+                    className={`text-xl font-bold p-4 rounded-lg ${
+                      feedback.includes("Correct")
+                        ? "bg-green-100 text-green-700"
+                        : "bg-red-100 text-red-700"
+                    }`}
+                  >
+                    {feedback}
+                  </div>
+                )}
+              </>
             )}
           </>
         )}

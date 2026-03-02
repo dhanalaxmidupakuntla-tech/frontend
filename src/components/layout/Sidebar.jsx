@@ -8,6 +8,7 @@ import {
   LogOut,
   Menu,
   X,
+  Icon,
 } from "lucide-react";
 import { useState, useContext } from "react";
 import { useTheme } from "../../context/ThemeContext";
@@ -32,6 +33,8 @@ export default function Sidebar() {
         <button onClick={() => setOpen(true)}>
           <Menu size={26} />
         </button>
+
+        <Icon size={18} />
       </div>
 
       {/* ===== SIDEBAR (FIXED WIDTH ONLY) ===== */}

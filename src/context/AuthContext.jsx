@@ -33,7 +33,8 @@ export const AuthProvider = ({ children }) => {
 
     localStorage.setItem("token", res.data.token);
     setToken(res.data.token); // ✅ update state
-    setUser(res.data.user);
+    const me = await api.get("/auth/me");
+    setUser(me.data);
   };
 
   const logout = () => {

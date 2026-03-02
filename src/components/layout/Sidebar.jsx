@@ -43,7 +43,7 @@ export default function Sidebar() {
             ["/achievements", Trophy],
             ["/ai", Mic],
             ["/alphabet", Type],
-            ["/quiz", Type],
+            ["/quiz", Type, "Quiz"],
           ].map(([path, Icon]) => (
             <NavLink
               key={path}
@@ -89,7 +89,7 @@ export default function Sidebar() {
 
       {/* ===== SIDEBAR (FIXED WIDTH ONLY) ===== */}
       <aside
-        className={` overflow-hidden
+        className={`
           fixed top-0 left-0 z-50  w-64
           p-6 text-white
           transform transition-transform duration-300

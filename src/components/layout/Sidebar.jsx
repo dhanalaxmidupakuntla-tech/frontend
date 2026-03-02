@@ -31,13 +31,14 @@ export default function Sidebar() {
         p-4 md:p-6
         text-white
         flex flex-col
+        overflow-hidden
         ${kidMode ? "bg-pink-600" : "bg-purple-600"}
         ${theme === "dark" ? "dark:bg-gray-800" : ""}
       `}
     >
-      {/* ===== TOP SECTION ===== */}
-      <div>
-        {/* Logo / Title */}
+      {/* ===== SCROLLABLE CONTENT ===== */}
+      <div className="flex-1 overflow-y-auto pr-1">
+        {/* Logo */}
         <div className="mb-6">
           <h1 className="hidden md:block text-2xl font-bold">
             FunLang 🚀
@@ -72,9 +73,8 @@ export default function Sidebar() {
         </nav>
       </div>
 
-      {/* ===== BOTTOM SECTION ===== */}
-      <div className="mt-auto space-y-3 text-sm pt-6">
-        {/* Toggles only visible on desktop */}
+      {/* ===== FIXED BOTTOM SECTION ===== */}
+      <div className="space-y-3 text-sm pt-4 border-t border-white/20">
         <label className="hidden md:flex justify-between items-center">
           <span>Kid Mode</span>
           <input

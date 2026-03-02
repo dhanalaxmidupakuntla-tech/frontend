@@ -22,74 +22,78 @@ export default function Sidebar() {
   const navigate = useNavigate();
 
   const linkClass =
-    "flex items-center gap-3 p-3 rounded-lg hover:bg-purple-500 transition";
+    "flex items-center justify-center md:justify-start gap-3 p-3 rounded-lg hover:bg-purple-500 transition";
+
   const activeClass = "bg-purple-700";
 
   return (
-    <>
-      {/* ===== MOBILE TOP BAR ===== */}
-      <div className="md:hidden p-4 bg-purple-600">
-        <button onClick={() => setOpen(true)}>
-          <Menu size={26} />
+    <aside
+      className={`
+        fixed top-0 left-0 h-screen z-50
+        w-20 md:w-64
+        p-4 md:p-6
+        text-white
+        transition-all duration-300
+        ${kidMode ? "bg-pink-600" : "bg-purple-600"}
+        ${theme === "dark" ? "dark:bg-gray-800" : ""}
+      `}
+    >
+      {/* ===== MENU ICON (Top) ===== */}
+      <div className="flex justify-center md:justify-between items-center mb-8">
+        {/* Mobile: show only menu icon */}
+        <button
+          onClick={() => setOpen(!open)}
+          className="md:hidden"
+        >
+          {open ? <X size={24} /> : <Menu size={24} />}
         </button>
+
+        {/* Desktop Title */}
+        <h1 className="hidden md:block text-2xl font-bold">
+          FunLang 🚀
+        </h1>
       </div>
 
-      {/* ===== SIDEBAR (FIXED WIDTH ONLY) ===== */}
-      <aside
-        className={`
-          fixed top-0 left-0 z-50  w-64
-          p-6 text-white
-          transform transition-transform duration-300
-          ${open ? "translate-x-0" : "-translate-x-full"}
-          md:translate-x-0 md:static
-          ${kidMode ? "bg-pink-600" : "bg-purple-600"}
-          ${theme === "dark" ? "dark:bg-gray-800" : ""}
-        `}
-      >
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold">FunLang 🚀</h1>
-          <button className="md:hidden" onClick={() => setOpen(false)}>
-            <X size={24} />
-          </button>
-        </div>
+      {/* ===== NAVIGATION ===== */}
+      <nav className="space-y-3">
+        {[
+          ["/", Home, "Dashboard"],
+          ["/lessons", Book, "Lessons"],
+          ["/flashcards", Book, "Flashcards"],
+          ["/speaking", Mic, "Speaking"],
+          ["/game", Book, "Game"],
+          ["/leaderboard", Trophy, "Leaderboard"],
+          ["/achievements", Trophy, "Achievements"],
+          ["/ai", Mic, "AI Tutor"],
+          ["/alphabet", Type, "Alphabet"],
+          ["/quiz", Type, "Quiz"],
+        ].map(([path, Icon, label]) => (
+          <NavLink
+            key={path}
+            to={path}
+            className={({ isActive }) =>
+              `${linkClass} ${isActive ? activeClass : ""}`
+            }
+          >
+            <Icon size={22} />
+            <span className="hidden md:inline">{label}</span>
+          </NavLink>
+        ))}
+      </nav>
 
-        {/* Links */}
-        <nav className="space-y-2">
-          {[
-            ["/", Home, "Dashboard"],
-            ["/lessons", Book, "Lessons"],
-            ["/flashcards", Book, "Flashcards"],
-            ["/speaking", Mic, "Speaking"],
-            ["/game", Book, "Game"],
-            ["/leaderboard", Trophy, "Leaderboard"],
-            ["/achievements", Trophy, "Achievements"],
-            ["/ai", Mic, "AI Tutor"],
-            ["/alphabet", Type, "Alphabet"],
-            ["/quiz", Type, "Quiz"],
-          ].map(([path, Icon, label]) => (
-            <NavLink
-              key={path}
-              to={path}
-              onClick={() => setOpen(false)}
-              className={({ isActive }) =>
-                `${linkClass} ${isActive ? activeClass : ""}`
-              }
-            >
-              <Icon size={18} />
-              {label}
-            </NavLink>
-          ))}
-        </nav>
-
-        {/* Toggles + Logout */}
-        <div className="mt-8 space-y-4 text-sm">
-          <label className="flex justify-between">
+      {/* ===== Bottom Section (Desktop only) ===== */}
+      <div className="absolute bottom-6 left-0 w-full px-4 hidden md:block">
+        <div className="space-y-3 text-sm">
+          <label className="flex justify-between items-center">
             <span>Kid Mode</span>
-            <input type="checkbox" checked={kidMode} onChange={toggleKidMode} />
+            <input
+              type="checkbox"
+              checked={kidMode}
+              onChange={toggleKidMode}
+            />
           </label>
 
-          <label className="flex justify-between">
+          <label className="flex justify-between items-center">
             <span>Dark Mode</span>
             <input
               type="checkbox"
@@ -104,13 +108,14 @@ export default function Sidebar() {
                 logout();
                 navigate("/login");
               }}
-              className="flex items-center gap-2 mt-4 hover:text-red-300"
+              className="flex items-center gap-2 hover:text-red-300"
             >
-              <LogOut size={16} /> Logout
+              <LogOut size={16} />
+              Logout
             </button>
           )}
         </div>
-      </aside>
-    </>
+      </div>
+    </aside>
   );
 }

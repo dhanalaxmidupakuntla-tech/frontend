@@ -40,13 +40,6 @@ export default function Sidebar() {
     >
       {/* ===== MENU ICON (Top) ===== */}
       <div className="flex justify-center md:justify-between items-center mb-4">
-        {/* Mobile: show only menu icon */}
-        <button
-          onClick={() => setOpen(!open)}
-          className="md:hidden"
-        >
-          {open ? <X size={24} /> : <Menu size={24} />}
-        </button>
 
         {/* Desktop Title */}
         <h1 className="hidden md:block text-2xl font-bold">

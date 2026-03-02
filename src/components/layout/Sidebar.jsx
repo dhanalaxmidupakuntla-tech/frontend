@@ -29,7 +29,7 @@ export default function Sidebar() {
     <>
       {/* ===== MOBILE TOP BAR ===== */}
       <div className="mt-8 bg-purple-600">
-        <button onClick={() => setOpen(true)}>
+        <button onClick={() => setOpen(false)}>
           <Menu size={26} />
         </button>
                 <nav className="space-y-2">

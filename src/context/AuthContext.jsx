@@ -7,22 +7,14 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("token"));
 
-  useEffect(() => {
-    if (!token) return;
+useEffect(() => {
+  if (!token) return;
 
-    const fetchUser = async () => {
-      try {
-        const res = await api.get("/auth/me");
-        setUser(res.data);
-      } catch (err) {
-        localStorage.removeItem("token");
-        setToken(null);
-        setUser(null);
-      }
-    };
-
-    fetchUser();
-  }, [token]); // ✅ depend on token
+  const fetchUser = async () => {
+    const res = await api.get("/auth/me");
+    setUser(res.data);
+  };
+}, [token]); // ✅ depend on token
 
   const register = async (data) => {
     await api.post("/auth/register", data);

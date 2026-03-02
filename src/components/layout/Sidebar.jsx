@@ -28,7 +28,7 @@ export default function Sidebar() {
   return (
     <>
       {/* ===== MOBILE TOP BAR ===== */}
-      <div className="md:hidden p-4 bg-purple-600">
+      <div className="md:hidden p-4 bg-purple-600 overflow-hidden">
         <button onClick={() => setOpen(true)}>
           <Menu size={26} />
         </button>
@@ -89,7 +89,7 @@ export default function Sidebar() {
 
       {/* ===== SIDEBAR (FIXED WIDTH ONLY) ===== */}
       <aside
-        className={`
+        className={` overflow-hidden
           fixed top-0 left-0 z-50  w-64
           p-6 text-white
           transform transition-transform duration-300

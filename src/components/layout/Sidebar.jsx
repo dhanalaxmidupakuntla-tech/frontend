@@ -28,63 +28,10 @@ export default function Sidebar() {
   return (
     <>
       {/* ===== MOBILE TOP BAR ===== */}
-      <div className="mt-8 bg-purple-600">
-        <button onClick={() => setOpen(false)}>
+      <div className="md:hidden p-4 bg-purple-600">
+        <button onClick={() => setOpen(true)}>
           <Menu size={26} />
         </button>
-                <nav className="space-y-2">
-          {[
-            ["/", Home],
-            ["/lessons", Book],
-            ["/flashcards", Book],
-            ["/speaking", Mic],
-            ["/game", Book],
-            ["/leaderboard", Trophy],
-            ["/achievements", Trophy],
-            ["/ai", Mic],
-            ["/alphabet", Type],
-            ["/quiz", Type, "Quiz"],
-          ].map(([path, Icon]) => (
-            <NavLink
-              key={path}
-              to={path}
-              onClick={() => setOpen(false)}
-              className={({ isActive }) =>
-                `${linkClass} ${isActive ? activeClass : ""}`
-              }
-            >
-              <Icon size={18} />
-
-            </NavLink>
-          ))}
-        </nav>
-
-        {/* Toggles + Logout */}
-        <div className="mt-8 space-y-4 text-sm">
-          <label className="flex justify-between">
-            <input type="checkbox" checked={kidMode} onChange={toggleKidMode} />
-          </label>
-
-          <label className="flex justify-between">
-            <input
-              type="checkbox"
-              checked={theme === "dark"}
-              onChange={toggleTheme}
-            />
-          </label>
-
-          {user && (
-            <button
-              onClick={() => {
-                logout();
-                navigate("/login");
-              }}
-              className="flex items-center gap-2 mt-4 hover:text-red-300"
-            >
-              <LogOut size={16} />
-            </button>
-          )}
-        </div>
       </div>
 
       {/* ===== SIDEBAR (FIXED WIDTH ONLY) ===== */}

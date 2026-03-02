@@ -1,68 +1,89 @@
 import { useState, useEffect, useContext, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import PageWrapper from "../components/layout/PageWrapper";
 import FlashCardView from "../components/flashcards/FlashCardView";
 import ReviewButtons from "../components/flashcards/ReviewButtons";
 import useFlashcardStats from "../hooks/useFlashcardStats";
 import { calculateSM2 } from "../utils/sm2";
 import { XpContext } from "../context/XpContext";
-import { useNavigate } from "react-router-dom";
+
+/* ---------------------------------- */
+/* Helpers */
+/* ---------------------------------- */
+
+const NOW = () => Date.now();
+
+const DEFAULT_CARDS = [
+  { id: 1, word: "Hello", meaning: "Hola", category: "Basics" },
+  { id: 2, word: "Thank you", meaning: "Gracias", category: "Basics" },
+  { id: 3, word: "Airport", meaning: "Aeropuerto", category: "Travel" },
+  { id: 4, word: "Hotel", meaning: "Hotel", category: "Travel" },
+  { id: 5, word: "Water", meaning: "Agua", category: "Food" },
+  { id: 6, word: "Bread", meaning: "Pan", category: "Food" },
+].map((c) => ({
+  ...c,
+  repetitions: 0,
+  easeFactor: 2.5,
+  interval: 1,
+  nextReview: NOW(),
+  correctCount: 0,
+  wrongCount: 0,
+}));
+
+const loadFlashcards = () => {
+  const saved = localStorage.getItem("flashcards");
+  return saved ? JSON.parse(saved) : DEFAULT_CARDS;
+};
+
+const getLevelFromAccuracy = (accuracy) => {
+  if (accuracy >= 90) return "Advanced";
+  if (accuracy >= 70) return "Intermediate";
+  return "Beginner";
+};
+
+/* ---------------------------------- */
+/* Component */
+/* ---------------------------------- */
 
 export default function Flashcards() {
   const { addXp } = useContext(XpContext);
   const navigate = useNavigate();
 
+  const [flashcards, setFlashcards] = useState(loadFlashcards);
+  const [index, setIndex] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [shuffleMode, setShuffleMode] = useState(false);
-  const [level, setLevel] = useState("Beginner");
 
   const [newWord, setNewWord] = useState("");
   const [newMeaning, setNewMeaning] = useState("");
   const [newCategory, setNewCategory] = useState("Basics");
 
-  const [flashcards, setFlashcards] = useState(() => {
-    const saved = localStorage.getItem("flashcards");
-    if (saved) return JSON.parse(saved);
-
-    const now = Date.now();
-
-    return [
-      { id: 1, word: "Hello", meaning: "Hola", category: "Basics", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
-      { id: 2, word: "Thank you", meaning: "Gracias", category: "Basics", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
-      { id: 3, word: "Airport", meaning: "Aeropuerto", category: "Travel", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
-      { id: 4, word: "Hotel", meaning: "Hotel", category: "Travel", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
-      { id: 5, word: "Water", meaning: "Agua", category: "Food", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
-      { id: 6, word: "Bread", meaning: "Pan", category: "Food", repetitions: 0, easeFactor: 2.5, interval: 1, nextReview: now, correctCount: 0, wrongCount: 0 },
-    ];
-  });
-
-  const [index, setIndex] = useState(0);
-
   const stats = useFlashcardStats(flashcards);
+  const level = getLevelFromAccuracy(stats.accuracy);
 
-  // Auto Level Upgrade
-  useEffect(() => {
-    if (stats.accuracy >= 90) setLevel("Advanced");
-    else if (stats.accuracy >= 70) setLevel("Intermediate");
-    else setLevel("Beginner");
-  }, [stats.accuracy]);
+  /* ---------------------------------- */
+  /* Derived Cards */
+  /* ---------------------------------- */
 
   const readyCards = useMemo(() => {
-    const now = Date.now();
+    const now = NOW();
 
-    let filtered = flashcards
-      .filter((c) => c.nextReview <= now)
-      .filter((c) =>
-        selectedCategory === "All" ? true : c.category === selectedCategory
-      );
+    const filtered = flashcards.filter(
+      (c) =>
+        c.nextReview <= now &&
+        (selectedCategory === "All" || c.category === selectedCategory)
+    );
 
-    if (shuffleMode) {
-      return [...filtered].sort(() => Math.random() - 0.5);
-    }
-
-    return filtered.sort((a, b) => a.nextReview - b.nextReview);
+    return shuffleMode
+      ? [...filtered].sort(() => Math.random() - 0.5)
+      : filtered.sort((a, b) => a.nextReview - b.nextReview);
   }, [flashcards, selectedCategory, shuffleMode]);
 
   const currentCard = readyCards[index] ?? null;
+
+  /* ---------------------------------- */
+  /* Effects */
+  /* ---------------------------------- */
 
   useEffect(() => {
     localStorage.setItem("flashcards", JSON.stringify(flashcards));
@@ -70,72 +91,72 @@ export default function Flashcards() {
 
   useEffect(() => {
     setIndex(0);
-  }, [selectedCategory, shuffleMode]);
+  }, [selectedCategory, shuffleMode, readyCards.length]);
+
+  /* ---------------------------------- */
+  /* Actions */
+  /* ---------------------------------- */
+
+  const nextCard = () =>
+    setIndex((i) => (i < readyCards.length - 1 ? i + 1 : 0));
+
+  const prevCard = () =>
+    setIndex((i) => (i > 0 ? i - 1 : i));
 
   const reviewCard = (quality) => {
     if (!currentCard) return;
 
     setFlashcards((prev) =>
-      prev.map((card) => {
-        if (card.id !== currentCard.id) return card;
-
-        const updated = calculateSM2(card, quality);
-
-        return {
-          ...card,
-          ...updated,
-          correctCount:
-            quality >= 3 ? card.correctCount + 1 : card.correctCount,
-          wrongCount:
-            quality < 3 ? card.wrongCount + 1 : card.wrongCount,
-        };
-      })
+      prev.map((card) =>
+        card.id !== currentCard.id
+          ? card
+          : {
+              ...card,
+              ...calculateSM2(card, quality),
+              correctCount:
+                quality >= 3 ? card.correctCount + 1 : card.correctCount,
+              wrongCount:
+                quality < 3 ? card.wrongCount + 1 : card.wrongCount,
+            }
+      )
     );
 
     addXp(quality * 5);
     nextCard();
   };
 
-  const nextCard = () => {
-    if (index < readyCards.length - 1) {
-      setIndex((prev) => prev + 1);
-    } else {
-      setIndex(0);
-    }
-  };
-
-  const prevCard = () => {
-    if (index > 0) {
-      setIndex((prev) => prev - 1);
-    }
-  };
-
   const addNewCard = () => {
-    if (!newWord || !newMeaning) return;
+    if (!newWord.trim() || !newMeaning.trim()) return;
 
-    const newCard = {
-      id: Date.now(),
-      word: newWord,
-      meaning: newMeaning,
-      category: newCategory,
-      repetitions: 0,
-      easeFactor: 2.5,
-      interval: 1,
-      nextReview: Date.now(),
-      correctCount: 0,
-      wrongCount: 0,
-    };
+    setFlashcards((prev) => [
+      ...prev,
+      {
+        id: NOW(),
+        word: newWord,
+        meaning: newMeaning,
+        category: newCategory,
+        repetitions: 0,
+        easeFactor: 2.5,
+        interval: 1,
+        nextReview: NOW(),
+        correctCount: 0,
+        wrongCount: 0,
+      },
+    ]);
 
-    setFlashcards((prev) => [...prev, newCard]);
     setNewWord("");
     setNewMeaning("");
   };
 
+  /* ---------------------------------- */
+  /* UI */
+  /* ---------------------------------- */
+
   if (!currentCard) {
     return (
       <PageWrapper title="Flashcards">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold">🎉 You're done for today!</h2>
+        <div className="text-center text-xl font-bold">
+          🎉 You're done for today!
         </div>
       </PageWrapper>
     );
@@ -152,12 +173,10 @@ export default function Flashcards() {
           ⬅ Back
         </button>
 
-        {/* Level Badge */}
         <div className="mb-3 font-bold text-purple-700">
           🏆 Level: {level}
         </div>
 
-        {/* Category */}
         <select
           value={selectedCategory}
           onChange={(e) => setSelectedCategory(e.target.value)}
@@ -169,15 +188,13 @@ export default function Flashcards() {
           <option>Food</option>
         </select>
 
-        {/* Shuffle Toggle */}
         <button
-          onClick={() => setShuffleMode(!shuffleMode)}
+          onClick={() => setShuffleMode((s) => !s)}
           className="mb-4 bg-indigo-600 text-white px-4 py-2 rounded w-full"
         >
           🔀 Shuffle: {shuffleMode ? "ON" : "OFF"}
         </button>
 
-        {/* Progress */}
         <p className="text-sm text-gray-600 mb-2">
           Card {index + 1} of {readyCards.length}
         </p>
@@ -185,20 +202,18 @@ export default function Flashcards() {
         <div className="w-full bg-gray-300 h-3 rounded-full mb-6">
           <div
             className="bg-green-500 h-3 rounded-full transition-all"
-            style={{
-              width: `${((index + 1) / readyCards.length) * 100}%`,
-            }}
+            style={{ width: `${((index + 1) / readyCards.length) * 100}%` }}
           />
         </div>
 
         <FlashCardView card={currentCard} />
         <ReviewButtons onReview={reviewCard} />
 
-        {/* Navigation Buttons */}
         <div className="flex gap-2 mt-4">
           <button
             onClick={prevCard}
-            className="bg-gray-600 text-white px-4 py-2 rounded w-full"
+            disabled={index === 0}
+            className="bg-gray-600 text-white px-4 py-2 rounded w-full disabled:opacity-50"
           >
             ⬅ Previous
           </button>
@@ -211,12 +226,10 @@ export default function Flashcards() {
           </button>
         </div>
 
-        {/* Add New Card */}
         <div className="mt-8 p-4 bg-gray-100 rounded">
           <h3 className="font-bold mb-2">➕ Add New Card</h3>
 
           <input
-            type="text"
             placeholder="Word"
             value={newWord}
             onChange={(e) => setNewWord(e.target.value)}
@@ -224,7 +237,6 @@ export default function Flashcards() {
           />
 
           <input
-            type="text"
             placeholder="Meaning"
             value={newMeaning}
             onChange={(e) => setNewMeaning(e.target.value)}
